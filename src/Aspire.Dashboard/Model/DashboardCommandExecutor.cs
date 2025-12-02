@@ -8,6 +8,7 @@ using Aspire.Dashboard.Utils;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Microsoft.JSInterop;
 using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons;
 
 namespace Aspire.Dashboard.Model;
@@ -19,7 +20,8 @@ public sealed class DashboardCommandExecutor(
     IStringLocalizer<Dashboard.Resources.Resources> loc,
     IStringLocalizer<Commands> commandsLoc,
     NavigationManager navigationManager,
-    DashboardTelemetryService telemetryService)
+    DashboardTelemetryService telemetryService,
+    IJSRuntime jsRuntime)
 {
     private readonly HashSet<(string ResourceName, string CommandName)> _executingCommands = [];
     private readonly object _lock = new object();
@@ -147,6 +149,13 @@ public sealed class DashboardCommandExecutor(
         // Update toast with the result;
         if (response.Kind == ResourceCommandResponseKind.Succeeded)
         {
+            bool isValid = Uri.TryCreate(response.ErrorMessage, UriKind.Absolute, out var uriResult);
+            if (isValid && uriResult != null)
+            {
+                await jsRuntime.InvokeVoidAsync("window.open", uriResult.ToString(), "_blank").ConfigureAwait(false);
+                //navigationManager.NavigateTo(uriResult.ToString(), forceLoad: true);
+            }
+
             toastParameters.Title = string.Format(CultureInfo.InvariantCulture, loc[nameof(Dashboard.Resources.Resources.ResourceCommandSuccess)], messageResourceName, command.GetDisplayName(commandsLoc));
             toastParameters.Intent = ToastIntent.Success;
             toastParameters.Icon = GetIntentIcon(ToastIntent.Success);

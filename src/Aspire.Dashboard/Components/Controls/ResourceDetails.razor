@@ -246,6 +246,56 @@
                     </AspireTemplateColumn>
                 </FluentDataGrid>
             </FluentAccordionItem>
+            <FluentAccordionItem Heading="Playwright Test Results" Expanded="@_isHealthChecksExpanded">
+                <div slot="end">
+                    <FluentBadge Appearance="Appearance.Neutral" Circular="true">
+                        @FilteredTestReports.Count()
+                    </FluentBadge>
+                </div>
+
+                <FluentDataGrid ColumnResizeLabels="@_resizeLabels"
+                                ColumnSortLabels="@_sortLabels"
+                                HeaderCellAsButtonWithMenu="true"
+                                ResizeType="DataGridResizeType.Discrete"
+                                Items="@FilteredTestReports"
+                                ItemKey="r => r.Name"
+                                ResizableColumns="true"
+                                Style="width:100%"
+                                RowSize="DataGridRowSize.Medium"
+                                GridTemplateColumns="1fr 1fr 1.5fr"
+                                ShowHover="true">
+                    <AspireTemplateColumn Title="@ControlStringsLoc[nameof(ControlsStrings.NameColumnHeader)]" Class="nameColumn">
+                        <GridValue ValueDescription="@ControlStringsLoc[nameof(ControlsStrings.NameColumnHeader)]"
+                                   Value="@context.Name"
+                                   EnableHighlighting="@(!string.IsNullOrEmpty(_filter))"
+                                   HighlightText="@_filter" />
+                    </AspireTemplateColumn>
+                    <AspireTemplateColumn Title="@ControlStringsLoc[nameof(ControlsStrings.StateColumnHeader)]" Class="stateColumn">
+                        <GridValue ValueDescription="@ControlStringsLoc[nameof(ControlsStrings.StateColumnHeader)]"
+                                   Value="@GetHealthStatusWithTime(context)"
+                                   ToolTip="@GetHealthStatusTooltip(context)"
+                                   EnableHighlighting="@(!string.IsNullOrEmpty(_filter))"
+                                   HighlightText="@_filter"
+                                   TextVisualizerTitle="@context.Name">
+                            <ContentBeforeValue>
+                                @if (context.HealthStatus is null)
+                                {
+                                    <FluentProgressRing Width="16px" Style="display: inline-block;" Class="severity-icon" />
+                                }
+                                else
+                                {
+                                    (Icon? icon, Color color) = ResourceIconHelpers.GetHealthStatusIcon(context.HealthStatus);
+
+                                    <FluentIcon Value="@icon" Color="@color" Class="severity-icon" />
+                                }
+                            </ContentBeforeValue>
+                        </GridValue>
+                    </AspireTemplateColumn>
+                    <AspireTemplateColumn Title="@ControlStringsLoc[nameof(ControlsStrings.DetailsColumnHeader)]" Class="detailsColumn">
+                        <FluentButton Appearance="Appearance.Lightweight" Class="button-hyperlink-no-icon" OnClick="@(() => OnTestResultsAsync(context.DisplayedDescription))">Test Run Tesults</FluentButton>
+                    </AspireTemplateColumn>
+                </FluentDataGrid>
+            </FluentAccordionItem>
             <FluentAccordionItem Heading="@ControlStringsLoc[nameof(ControlsStrings.ResourceDetailsEnvironmentVariablesHeader)]" Expanded="@_isEnvironmentVariablesExpanded">
                 <div slot="end">
                     <FluentBadge Appearance="Appearance.Neutral" Circular="true">
@@ -307,4 +357,16 @@
             return @<a href="@vm.Url" title="@vm.Url" target="_blank">@vm.DisplayName</a>;
         }
     }
+
+    private static RenderFragment RenderValueAsHtmlOrText(string? value) => builder =>
+    {
+        if (!string.IsNullOrEmpty(value) && value.Contains("<a ", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.AddMarkupContent(0, value);
+        }
+        else
+        {
+            builder.AddContent(1, value);
+        }
+    };
 }

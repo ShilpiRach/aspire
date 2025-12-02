@@ -94,7 +94,13 @@ public partial class ResourceDetails : IComponentWithTelemetry, IDisposable
 
     internal IQueryable<HealthReportViewModel> FilteredHealthReports =>
         Resource.HealthReports
-            .Where(vm => vm.MatchesFilter(_filter))
+            .Where(vm => vm.MatchesFilter(_filter) && !vm.Name.Contains("Test Run", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(vm => vm.Name, StringComparer.OrdinalIgnoreCase)
+            .AsQueryable();
+
+    internal IQueryable<HealthReportViewModel> FilteredTestReports =>
+        Resource.HealthReports
+            .Where(vm => vm.MatchesFilter(_filter) && vm.Name.Contains("Test Run", StringComparison.OrdinalIgnoreCase))
             .OrderBy(vm => vm.Name, StringComparer.OrdinalIgnoreCase)
             .AsQueryable();
 
@@ -180,7 +186,7 @@ public partial class ResourceDetails : IComponentWithTelemetry, IDisposable
                 {
                     Type = typeof(ResourceHealthStateValue),
                     Parameters = { ["Resource"] = _resource }
-                },
+                }
             };
 
             UpdateResourceActionsMenu();
@@ -371,6 +377,17 @@ public partial class ResourceDetails : IComponentWithTelemetry, IDisposable
     {
         NavigationManager.NavigateTo(DashboardUrls.ResourcesUrl(resource: relationship.Resource.Name));
         return Task.CompletedTask;
+    }
+
+    public async Task OnTestResultsAsync(string? value)
+    {
+        bool isValid = Uri.TryCreate(value, UriKind.Absolute, out var uriResult);
+        if (isValid && uriResult != null)
+        {
+            await JS.InvokeVoidAsync("window.open", uriResult.ToString(), "_blank").ConfigureAwait(false);
+        }
+
+        return;
     }
 
     // IComponentWithTelemetry impl

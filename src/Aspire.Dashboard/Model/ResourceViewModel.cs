@@ -143,7 +143,7 @@ public sealed class ResourceViewModel
             ? Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
             // If there are health reports, the health status is the minimum of the health status of the reports.
             // If any of the reports is null (first health check has not returned), the health status is unhealthy.
-            : healthReports.MinBy(r => r.HealthStatus)?.HealthStatus
+            : healthReports.Where(r => !r.Name.Contains("Test Run", StringComparison.OrdinalIgnoreCase)).MinBy(r => r.HealthStatus)?.HealthStatus
               ?? Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy;
     }
 
