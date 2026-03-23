@@ -321,8 +321,6 @@ public static partial class AzureAppServiceEnvironmentExtensions
         return builder;
     }
 
-
-
     /// <summary>
     /// Configures whether automatic scaling should be enabled for the app services in Azure App Service environment.
     /// </summary>
